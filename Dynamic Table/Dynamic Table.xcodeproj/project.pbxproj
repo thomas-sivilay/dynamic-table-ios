@@ -36,8 +36,8 @@
 		C87436F41F16655400785033 /* Dynamic TableTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Dynamic TableTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		C87436F81F16655400785033 /* Dynamic_TableTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Dynamic_TableTests.swift; sourceTree = "<group>"; };
 		C87436FA1F16655400785033 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		C87437061F16660B00785033 /* UTests.playground */ = {isa = PBXFileReference; lastKnownFileType = file.playground; path = UTests.playground; sourceTree = "<group>"; };
-		C87437071F16663300785033 /* Views.playground */ = {isa = PBXFileReference; lastKnownFileType = file.playground; path = Views.playground; sourceTree = "<group>"; };
+		C87437061F16660B00785033 /* UTests.playground */ = {isa = PBXFileReference; lastKnownFileType = file.playground; path = UTests.playground; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.swift; };
+		C87437071F16663300785033 /* Views.playground */ = {isa = PBXFileReference; lastKnownFileType = file.playground; path = Views.playground; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.swift; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */

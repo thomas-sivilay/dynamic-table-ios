@@ -1,5 +1,3 @@
-//: Playground - noun: a place where people can play
+import XCTest
 
-import UIKit
 
-var str = "Hello, playground"
