@@ -10,9 +10,25 @@ let style: JSON = [
 ]
 
 let json: [JSON] = [
-    ["title": "Hello!"],
-    ["text": "Product A"],
+    ["title": ["data": "Hello!", "style": ["padding": ["top": 0, "bottom": 0, "left": 10, "right": 10]]]],
+    ["text": ["data": "Product description!", "style": ["padding": ["top": 0, "bottom": 0, "left": 10, "right": 10]]]],
+    ["text": ["data": "Save it!", "style": ["padding": ["top": 0, "bottom": 0, "left": 10, "right": 10]]]],
 ]
+
+struct Padding {
+    let left: Int
+    let right: Int
+    let top: Int
+    let bottom: Int
+}
+
+struct Style {
+    let padding: Padding
+    
+    init(padding: Padding = Padding(left: 0, right: 0, top: 0, bottom: 0)) {
+        self.padding = padding
+    }
+}
 
 final class TextCell: UICollectionViewCell {
     
@@ -29,13 +45,23 @@ final class TextCell: UICollectionViewCell {
     
     private func setUp() {
         addSubview(label)
-        label.snp.makeConstraints { make in
-            make.edges.equalToSuperview()
-        }
+        makeConstraints(with: Style())
     }
     
-    func configure(with text: String) {
+    func configure(with text: String, style: Style) {
         label.text = text
+        layer.borderColor = UIColor.cyan.cgColor
+        layer.borderWidth = 1
+        makeConstraints(with: style)
+    }
+    
+    private func makeConstraints(with style: Style) {
+        label.snp.remakeConstraints { make in
+            make.top.equalToSuperview().offset(style.padding.top)
+            make.bottom.equalToSuperview().offset(style.padding.bottom)
+            make.left.equalToSuperview().offset(style.padding.left)
+            make.right.equalToSuperview().offset(style.padding.right)
+        }
     }
 }
 
@@ -71,7 +97,6 @@ final class ViewController: UIViewController {
         view.addSubview(collectionView)
         collectionView.snp.makeConstraints { make in
             make.edges.equalToSuperview()
-            make.height.equalTo(200)
         }
     }
 }
@@ -87,8 +112,12 @@ extension ViewController: UICollectionViewDataSource {
         print(data)
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "textCell", for: indexPath) as! TextCell
         
+        // HERE IS THE INTERESTING WORK..
+        
         if let text = data["text"] as? String {
-            cell.configure(with: text)
+            let padding = Padding(left: 20, right: 20, top: 0, bottom: 0)
+            let style = Style(padding: padding)
+            cell.configure(with: text, style: style)
         } else {
             print("OOPS")
         }
@@ -100,7 +129,9 @@ extension ViewController: UICollectionViewDataSource {
 
 extension ViewController: UICollectionViewDelegateFlowLayout {
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
-        print("TOTO")
+        
+        // DEFINE THE HEIGHT FOR A GIVEN DATA
+        
         return CGSize(width: view.frame.width, height: 50)
     }
 }
