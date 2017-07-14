@@ -11,7 +11,7 @@ let style: JSON = [
 
 let json: [JSON] = [
     ["title": ["data": "Hello!", "style": ["padding": ["top": 0, "bottom": 0, "left": 10, "right": 10]]]],
-    ["text": ["data": "Product description!", "style": ["padding": ["top": 0, "bottom": 0, "left": 10, "right": 10]]]],
+    ["text": ["data": "Product description!", "style": ["padding": ["top": 0, "bottom": 0, "left": 30, "right": 10]]]],
     ["text": ["data": "Save it!", "style": ["padding": ["top": 0, "bottom": 0, "left": 10, "right": 10]]]],
 ]
 
@@ -20,6 +20,29 @@ struct Padding {
     let right: Int
     let top: Int
     let bottom: Int
+    
+    init(with json: JSON) {
+        guard
+            let top = json["top"] as? Int,
+            let bottom = json["bottom"] as? Int,
+            let left = json["left"] as? Int,
+            let right = json["right"] as? Int
+        else {
+                fatalError()
+        }
+        
+        self.top = top
+        self.bottom = bottom
+        self.left = left
+        self.right = right
+    }
+    
+    init(left: Int, right: Int, top: Int, bottom: Int) {
+        self.left = left
+        self.right = right
+        self.top = top
+        self.bottom = bottom
+    }
 }
 
 struct Style {
@@ -27,6 +50,33 @@ struct Style {
     
     init(padding: Padding = Padding(left: 0, right: 0, top: 0, bottom: 0)) {
         self.padding = padding
+    }
+    
+    init(with json: JSON) {
+        guard
+            let padding = json["padding"] as? JSON
+        else {
+                fatalError()
+        }
+        
+        self.padding = Padding(with: padding)
+    }
+}
+
+struct Text {
+    let data: String
+    let style: Style
+    
+    init(with json: JSON) {
+        guard
+            let data = json["data"] as? String,
+            let style = json["style"] as? JSON
+        else {
+            // Better error handling
+            fatalError()
+        }
+        self.data = data
+        self.style = Style(with: style)
     }
 }
 
@@ -114,10 +164,11 @@ extension ViewController: UICollectionViewDataSource {
         
         // HERE IS THE INTERESTING WORK..
         
-        if let text = data["text"] as? String {
+        if let json = data["text"] as? JSON {
+            let text = Text(with: json)
             let padding = Padding(left: 20, right: 20, top: 0, bottom: 0)
             let style = Style(padding: padding)
-            cell.configure(with: text, style: style)
+            cell.configure(with: text.data, style: text.style)
         } else {
             print("OOPS")
         }
