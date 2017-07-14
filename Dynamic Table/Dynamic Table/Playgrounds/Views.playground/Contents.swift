@@ -1,6 +1,5 @@
 import UIKit
 import PlaygroundSupport
-import DynamicTable
 import SnapKit
 
 typealias JSON = [String: Any]
@@ -30,6 +29,9 @@ final class TextCell: UICollectionViewCell {
     
     private func setUp() {
         addSubview(label)
+        label.snp.makeConstraints { make in
+            make.edges.equalToSuperview()
+        }
     }
     
     func configure(with text: String) {
