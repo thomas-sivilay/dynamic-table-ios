@@ -5,14 +5,32 @@ import SnapKit
 typealias JSON = [String: Any]
 
 let style: JSON = [
-    "text": [ "size": 16],
-    "title": [ "size": 24]
+    "text":
+        ["size": 16],
+    "title":
+        ["size": 24]
 ]
 
 let json: [JSON] = [
-    ["title": ["data": "Hello!", "style": ["padding": ["top": 0, "bottom": 0, "left": 10, "right": 10]]]],
-    ["text": ["data": "Product description!", "style": ["padding": ["top": 0, "bottom": 0, "left": 30, "right": 10], "size": 13]]],
-    ["text": ["data": "Save it!", "style": ["padding": ["top": 0, "bottom": 0, "left": 10, "right": 10]]]],
+    ["title":
+        ["data": "Hello!",
+         "style":
+            ["padding": ["top": 0, "bottom": 0, "left": 10, "right": 10]]
+        ]
+    ],
+    ["text":
+        ["data": "Product description!",
+         "style":
+            ["padding": ["top": 0, "bottom": 0, "left": 30, "right": 10],
+             "size": 13]
+        ]
+    ],
+    ["text":
+        ["data": "Save it!",
+         "style":
+            ["padding": ["top": 0, "bottom": 0, "left": 10, "right": 10]]
+        ]
+    ],
 ]
 
 struct Padding {
