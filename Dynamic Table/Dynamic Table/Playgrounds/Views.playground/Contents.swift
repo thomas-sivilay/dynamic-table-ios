@@ -11,7 +11,7 @@ let style: JSON = [
 
 let json: [JSON] = [
     ["title": ["data": "Hello!", "style": ["padding": ["top": 0, "bottom": 0, "left": 10, "right": 10]]]],
-    ["text": ["data": "Product description!", "style": ["padding": ["top": 0, "bottom": 0, "left": 30, "right": 10]]]],
+    ["text": ["data": "Product description!", "style": ["padding": ["top": 0, "bottom": 0, "left": 30, "right": 10], "size": 13]]],
     ["text": ["data": "Save it!", "style": ["padding": ["top": 0, "bottom": 0, "left": 10, "right": 10]]]],
 ]
 
@@ -78,10 +78,7 @@ struct Theme {
 
 struct Style {
     let padding: Padding
-    
-    init(padding: Padding = Padding(left: 0, right: 0, top: 0, bottom: 0)) {
-        self.padding = padding
-    }
+    var size: Int?
     
     init(with json: JSON) {
         guard
@@ -91,6 +88,10 @@ struct Style {
         }
         
         self.padding = Padding(with: padding)
+        
+        if let size = json["size"] as? Int {
+            self.size = size
+        }
     }
 }
 
@@ -126,14 +127,21 @@ final class TextCell: UICollectionViewCell {
     
     private func setUp() {
         addSubview(label)
-        makeConstraints(with: Style())
     }
     
     func configure(with text: String, style: Style, textStyle: TextStyle) {
         label.text = text
         label.font = UIFont.systemFont(ofSize: CGFloat(textStyle.size))
+        
+        // OVERLOAD
+        if let size = style.size {
+            label.font = UIFont.systemFont(ofSize: CGFloat(size))
+        }
+        
+        // DEBUG
         layer.borderColor = UIColor.cyan.cgColor
         layer.borderWidth = 1
+        
         makeConstraints(with: style)
     }
     
