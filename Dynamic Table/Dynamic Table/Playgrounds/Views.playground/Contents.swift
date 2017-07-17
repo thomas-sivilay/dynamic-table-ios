@@ -5,8 +5,8 @@ import SnapKit
 typealias JSON = [String: Any]
 
 let style: JSON = [
-    "text": [ "size": 10],
-    "title": [ "size": 16]
+    "text": [ "size": 16],
+    "title": [ "size": 24]
 ]
 
 let json: [JSON] = [
@@ -42,6 +42,37 @@ struct Padding {
         self.right = right
         self.top = top
         self.bottom = bottom
+    }
+}
+
+struct TextStyle {
+    let size: Int
+    
+    init(with json: JSON) {
+        guard
+            let size = json["size"] as? Int
+        else {
+            fatalError()
+        }
+        
+        self.size = size
+    }
+}
+
+struct Theme {
+    let textStyle: TextStyle
+    let titleStyle: TextStyle
+    
+    init(with json: JSON) {
+        guard
+            let textStyle = json["text"] as? JSON,
+            let titleStyle = json["title"] as? JSON
+        else {
+            fatalError()
+        }
+        
+        self.textStyle = TextStyle(with: textStyle)
+        self.titleStyle = TextStyle(with: titleStyle)
     }
 }
 
@@ -83,7 +114,7 @@ struct Text {
 final class TextCell: UICollectionViewCell {
     
     private let label = UILabel()
-        
+    
     override init(frame: CGRect) {
         super.init(frame: frame)
         setUp()
@@ -98,8 +129,9 @@ final class TextCell: UICollectionViewCell {
         makeConstraints(with: Style())
     }
     
-    func configure(with text: String, style: Style) {
+    func configure(with text: String, style: Style, textStyle: TextStyle) {
         label.text = text
+        label.font = UIFont.systemFont(ofSize: CGFloat(textStyle.size))
         layer.borderColor = UIColor.cyan.cgColor
         layer.borderWidth = 1
         makeConstraints(with: style)
@@ -118,6 +150,7 @@ final class TextCell: UICollectionViewCell {
 final class ViewController: UIViewController {
     
     private let loadedJSON: [JSON] = json
+    private let styleJSON: JSON = style
     
     private var layout = UICollectionViewFlowLayout()
     private var collectionView: UICollectionView = UICollectionView(frame: .zero, collectionViewLayout: UICollectionViewFlowLayout())
@@ -158,24 +191,26 @@ extension ViewController: UICollectionViewDataSource {
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        let data = loadedJSON[indexPath.row]
-        print(data)
-        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "textCell", for: indexPath) as! TextCell
-        
-        // HERE IS THE INTERESTING WORK..
-        
-        if let json = data["text"] as? JSON {
-            let text = Text(with: json)
-            let padding = Padding(left: 20, right: 20, top: 0, bottom: 0)
-            let style = Style(padding: padding)
-            cell.configure(with: text.data, style: text.style)
-        } else {
-            print("OOPS")
-        }
-        
-        return cell
+        let json = loadedJSON[indexPath.row]
+        return configuredCell(for: json, at: indexPath)
     }
     
+    private func configuredCell(for json: JSON, at indexPath: IndexPath) -> UICollectionViewCell {
+        if let textJSON = json["text"] as? JSON {
+            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "textCell", for: indexPath) as! TextCell
+            let text = Text(with: textJSON)
+            cell.configure(with: text.data, style: text.style, textStyle: Theme(with: style).textStyle)
+            return cell
+        } else if let titleJSON = json["title"] as? JSON {
+            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "textCell", for: indexPath) as! TextCell
+            let text = Text(with: titleJSON)
+            cell.configure(with: text.data, style: text.style, textStyle: Theme(with: style).titleStyle)
+            return cell
+        } else {
+            print("oops")
+            return UICollectionViewCell()
+        }
+    }
 }
 
 extension ViewController: UICollectionViewDelegateFlowLayout {
