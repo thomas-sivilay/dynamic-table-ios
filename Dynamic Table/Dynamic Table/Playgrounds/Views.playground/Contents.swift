@@ -2,133 +2,116 @@ import UIKit
 import PlaygroundSupport
 import SnapKit
 
-typealias JSON = [String: Any]
+typealias JSON = [String : Any]
 
-let style: JSON = [
-    "text":
-        ["size": 16],
-    "title":
-        ["size": 24]
-]
+struct TextData: Codable {
+    let text: String
+}
 
-let json: [JSON] = [
-    ["title":
-        ["data": "Hello!",
-         "style":
-            ["padding": ["top": 0, "bottom": 0, "left": 10, "right": 10]]
-        ]
-    ],
-    ["text":
-        ["data": "Product description!",
-         "style":
-            ["padding": ["top": 0, "bottom": 0, "left": 30, "right": 10],
-             "size": 13]
-        ]
-    ],
-    ["text":
-        ["data": "Save it!",
-         "style":
-            ["padding": ["top": 0, "bottom": 0, "left": 10, "right": 10]]
-        ]
-    ],
-]
+struct ImageData: Codable {
+    let url: String
+}
 
-struct Padding {
+struct TextStyle: Codable {
+    let padding: Padding
+    let size: Float
+}
+
+struct Padding: Codable {
     let left: Int
     let right: Int
     let top: Int
     let bottom: Int
-    
-    init(with json: JSON) {
-        guard
-            let top = json["top"] as? Int,
-            let bottom = json["bottom"] as? Int,
-            let left = json["left"] as? Int,
-            let right = json["right"] as? Int
-        else {
-                fatalError()
-        }
-        
-        self.top = top
-        self.bottom = bottom
-        self.left = left
-        self.right = right
-    }
-    
-    init(left: Int, right: Int, top: Int, bottom: Int) {
-        self.left = left
-        self.right = right
-        self.top = top
-        self.bottom = bottom
-    }
 }
 
-struct TextStyle {
-    let size: Int
+struct ImageStyle: Codable {
     
-    init(with json: JSON) {
-        guard
-            let size = json["size"] as? Int
-        else {
-            fatalError()
-        }
-        
-        self.size = size
-    }
 }
 
-struct Theme {
-    let textStyle: TextStyle
-    let titleStyle: TextStyle
-    
-    init(with json: JSON) {
-        guard
-            let textStyle = json["text"] as? JSON,
-            let titleStyle = json["title"] as? JSON
-        else {
-            fatalError()
-        }
-        
-        self.textStyle = TextStyle(with: textStyle)
-        self.titleStyle = TextStyle(with: titleStyle)
-    }
+enum UIElement: Decodable {
+    case text(data: TextData, style: TextStyle)
+    case title(data: TextData, style: TextStyle)
+    case image(data: ImageData, style: ImageStyle)
 }
 
-struct Style {
-    let padding: Padding
-    var size: Int?
+extension UIElement {
     
-    init(with json: JSON) {
-        guard
-            let padding = json["padding"] as? JSON
-        else {
-                fatalError()
-        }
-        
-        self.padding = Padding(with: padding)
-        
-        if let size = json["size"] as? Int {
-            self.size = size
+    private enum CodingKeys: String, CodingKey {
+        case type
+        case data
+        case style
+    }
+    
+    enum UIElementCodingError: Error {
+        case decoding(String)
+    }
+    
+    init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        if let type = try? values.decode(String.self, forKey: .type) {
+            switch type {
+            case "text":
+                if
+                    let data = try? values.decode(TextData.self, forKey: .data),
+                    let style = try? values.decode(TextStyle.self, forKey: .style)
+                {
+                    self = .text(data: data, style: style)
+                    return
+                } else {
+                    throw UIElementCodingError.decoding("Text Error")
+                }
+            case "title":
+                if
+                    let data = try? values.decode(TextData.self, forKey: .data),
+                    let style = try? values.decode(TextStyle.self, forKey: .style)
+                {
+                    self = .title(data: data, style: style)
+                    return
+                } else {
+                    throw UIElementCodingError.decoding("Title Error")
+                }
+            case "image":
+                if
+                    let data = try? values.decode(ImageData.self, forKey: .data),
+                    let style = try? values.decode(ImageStyle.self, forKey: .style)
+                {
+                    self = .image(data: data, style: style)
+                    return
+                } else {
+                    throw UIElementCodingError.decoding("Image Error")
+                }
+            default:
+                throw UIElementCodingError.decoding("Unknown key \(type)")
+            }
+        } else {
+            throw UIElementCodingError.decoding("Wow Error")
         }
     }
 }
 
-struct Text {
-    let data: String
-    let style: Style
-    
-    init(with json: JSON) {
-        guard
-            let data = json["data"] as? String,
-            let style = json["style"] as? JSON
-        else {
-            // Better error handling
-            fatalError()
-        }
-        self.data = data
-        self.style = Style(with: style)
-    }
+let style = """
+{
+    "text":
+    {"size": 16},
+    "title":
+    {"size": 24}
 }
+""".data(using: .utf8)!
+
+let json = """
+[
+    {
+        "type": "title",
+        "data": {"text": "Hello!"},
+         "style": {"padding": {"top": 0, "bottom": 0, "left": 10, "right": 10}, "size": 24}
+    },
+    {
+        "type": "text",
+        "data": {"text": "Hello!"},
+         "style": {"padding": {"top": 0, "bottom": 0, "left": 10, "right": 10}, "size": 14}
+    },
+]
+""".data(using: .utf8)!
 
 final class TextCell: UICollectionViewCell {
     
@@ -147,14 +130,9 @@ final class TextCell: UICollectionViewCell {
         addSubview(label)
     }
     
-    func configure(with text: String, style: Style, textStyle: TextStyle) {
-        label.text = text
-        label.font = UIFont.systemFont(ofSize: CGFloat(textStyle.size))
-        
-        // OVERLOAD
-        if let size = style.size {
-            label.font = UIFont.systemFont(ofSize: CGFloat(size))
-        }
+    func configure(with data: TextData, style: TextStyle) {
+        label.text = data.text
+        label.font = UIFont.systemFont(ofSize: CGFloat(style.size))
         
         // DEBUG
         layer.borderColor = UIColor.cyan.cgColor
@@ -163,7 +141,7 @@ final class TextCell: UICollectionViewCell {
         makeConstraints(with: style)
     }
     
-    private func makeConstraints(with style: Style) {
+    private func makeConstraints(with style: TextStyle) {
         label.snp.remakeConstraints { make in
             make.top.equalToSuperview().offset(style.padding.top)
             make.bottom.equalToSuperview().offset(style.padding.bottom)
@@ -175,11 +153,10 @@ final class TextCell: UICollectionViewCell {
 
 final class ViewController: UIViewController {
     
-    private let loadedJSON: [JSON] = json
-    private let styleJSON: JSON = style
-    
     private var layout = UICollectionViewFlowLayout()
     private var collectionView: UICollectionView = UICollectionView(frame: .zero, collectionViewLayout: UICollectionViewFlowLayout())
+    
+    private var elements = [UIElement]()
     
     init() {
         super.init(nibName: nil, bundle: nil)
@@ -192,6 +169,7 @@ final class ViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         setUp(view)
+        loadData()
     }
     
     private func setUp(_ view: UIView) {
@@ -208,33 +186,43 @@ final class ViewController: UIViewController {
             make.edges.equalToSuperview()
         }
     }
+    
+    private func loadData() {
+        let decoder = JSONDecoder()
+        do {
+            elements = try decoder.decode([UIElement].self, from: json)
+            collectionView.reloadData()
+        } catch {
+            print(error)
+        }
+    }
 }
 
 extension ViewController: UICollectionViewDataSource {
     
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return loadedJSON.count
+        return elements.count
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        let json = loadedJSON[indexPath.row]
-        return configuredCell(for: json, at: indexPath)
+        let element = elements[indexPath.row]
+        return configuredCell(for: element, at: indexPath)
     }
     
-    private func configuredCell(for json: JSON, at indexPath: IndexPath) -> UICollectionViewCell {
-        if let textJSON = json["text"] as? JSON {
-            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "textCell", for: indexPath) as! TextCell
-            let text = Text(with: textJSON)
-            cell.configure(with: text.data, style: text.style, textStyle: Theme(with: style).textStyle)
-            return cell
-        } else if let titleJSON = json["title"] as? JSON {
-            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "textCell", for: indexPath) as! TextCell
-            let text = Text(with: titleJSON)
-            cell.configure(with: text.data, style: text.style, textStyle: Theme(with: style).titleStyle)
-            return cell
-        } else {
+    private func configuredCell(for element: UIElement, at indexPath: IndexPath) -> UICollectionViewCell {
+        
+        switch element {
+        case let .image(data: _, style: _):
             print("oops")
             return UICollectionViewCell()
+        case let .text(data: data, style: style):
+            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "textCell", for: indexPath) as! TextCell
+            cell.configure(with: data, style: style)
+            return cell
+        case let .title(data: data, style: style):
+            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "textCell", for: indexPath) as! TextCell
+            cell.configure(with: data, style: style)
+            return cell
         }
     }
 }
