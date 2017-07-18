@@ -4,15 +4,23 @@ import SnapKit
 
 typealias JSON = [String : Any]
 
-struct TextData: Codable {
+protocol Data {
+    
+}
+
+protocol Style {
+    
+}
+
+struct TextData: Codable, Data {
     let text: String
 }
 
-struct ImageData: Codable {
+struct ImageData: Codable, Data {
     let url: String
 }
 
-struct TextStyle: Codable {
+struct TextStyle: Codable, Style {
     let padding: Padding
     let size: Float
 }
@@ -24,14 +32,25 @@ struct Padding: Codable {
     let bottom: Int
 }
 
-struct ImageStyle: Codable {
+struct ImageStyle: Codable, Style {
     
 }
 
+final class Element<Data, Style> {
+    var data: Data
+    var style: Style
+    
+    init(data: Data, style: Style) {
+        self.data = data
+        self.style = style
+    }
+}
+
 enum UIElement: Decodable {
-    case text(data: TextData, style: TextStyle)
+//    case text(data: TextData, style: TextStyle)
     case title(data: TextData, style: TextStyle)
     case image(data: ImageData, style: ImageStyle)
+    case text(Element<TextData, TextStyle>)
 }
 
 extension UIElement {
@@ -55,7 +74,7 @@ extension UIElement {
                     let data = try? values.decode(TextData.self, forKey: .data),
                     let style = try? values.decode(TextStyle.self, forKey: .style)
                 {
-                    self = .text(data: data, style: style)
+                    self = .text(Element(data: data, style: style))
                     return
                 } else {
                     throw UIElementCodingError.decoding("Text Error")
@@ -215,9 +234,9 @@ extension ViewController: UICollectionViewDataSource {
         case let .image(data: _, style: _):
             print("oops")
             return UICollectionViewCell()
-        case let .text(data: data, style: style):
+        case let .text(element):
             let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "textCell", for: indexPath) as! TextCell
-            cell.configure(with: data, style: style)
+            cell.configure(with: element.data, style: element.style)
             return cell
         case let .title(data: data, style: style):
             let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "textCell", for: indexPath) as! TextCell
