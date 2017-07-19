@@ -24,10 +24,12 @@ struct ImageData: Codable, Data {
 
 struct TitleStyle: Codable, Style {
     let size: Float
+    let padding: Padding
 }
 
 struct TextStyle: Codable, Style {
     let size: Float
+    let padding: Padding
 }
 
 struct Padding: Codable {
@@ -159,6 +161,8 @@ final class TextCell: UICollectionViewCell {
         if let style = style as? TextStyle {
             label.font = UIFont.systemFont(ofSize: CGFloat(style.size))
         }
+        
+        print(style)
         
         // DEBUG
         layer.borderColor = UIColor.cyan.cgColor
