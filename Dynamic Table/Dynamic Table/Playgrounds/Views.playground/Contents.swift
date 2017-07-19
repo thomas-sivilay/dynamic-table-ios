@@ -4,12 +4,14 @@ import SnapKit
 
 typealias JSON = [String : Any]
 
-protocol Data {
-    
-}
+protocol Data { }
 
 protocol Style {
-    
+    var padding: Padding { get }
+}
+
+extension Style {
+    var padding: Padding { return Padding(left: 0, right: 0, top: 0, bottom: 0) }
 }
 
 struct TextData: Codable, Data {
@@ -20,8 +22,11 @@ struct ImageData: Codable, Data {
     let url: String
 }
 
+struct TitleStyle: Codable, Style {
+    let size: Float
+}
+
 struct TextStyle: Codable, Style {
-    let padding: Padding
     let size: Float
 }
 
@@ -32,9 +37,7 @@ struct Padding: Codable {
     let bottom: Int
 }
 
-struct ImageStyle: Codable, Style {
-    
-}
+struct ImageStyle: Codable, Style { }
 
 final class Element<Data, Style> {
     var data: Data
@@ -47,8 +50,7 @@ final class Element<Data, Style> {
 }
 
 enum UIElement: Decodable {
-//    case text(data: TextData, style: TextStyle)
-    case title(data: TextData, style: TextStyle)
+    case title(Element<TextData, TitleStyle>)
     case image(data: ImageData, style: ImageStyle)
     case text(Element<TextData, TextStyle>)
 }
@@ -82,9 +84,9 @@ extension UIElement {
             case "title":
                 if
                     let data = try? values.decode(TextData.self, forKey: .data),
-                    let style = try? values.decode(TextStyle.self, forKey: .style)
+                    let style = try? values.decode(TitleStyle.self, forKey: .style)
                 {
-                    self = .title(data: data, style: style)
+                    self = .title(Element(data: data, style: style))
                     return
                 } else {
                     throw UIElementCodingError.decoding("Title Error")
@@ -122,7 +124,7 @@ let json = """
     {
         "type": "title",
         "data": {"text": "Hello!"},
-         "style": {"padding": {"top": 0, "bottom": 0, "left": 10, "right": 10}, "size": 24}
+         "style": {"padding": {"top": 0, "bottom": 0, "left": 20, "right": 20}, "size": 24}
     },
     {
         "type": "text",
@@ -149,9 +151,14 @@ final class TextCell: UICollectionViewCell {
         addSubview(label)
     }
     
-    func configure(with data: TextData, style: TextStyle) {
+    func configure(with data: TextData, style: Style) {
         label.text = data.text
-        label.font = UIFont.systemFont(ofSize: CGFloat(style.size))
+        if let style = style as? TitleStyle {
+            label.font = UIFont.systemFont(ofSize: CGFloat(style.size))
+        }
+        if let style = style as? TextStyle {
+            label.font = UIFont.systemFont(ofSize: CGFloat(style.size))
+        }
         
         // DEBUG
         layer.borderColor = UIColor.cyan.cgColor
@@ -160,7 +167,7 @@ final class TextCell: UICollectionViewCell {
         makeConstraints(with: style)
     }
     
-    private func makeConstraints(with style: TextStyle) {
+    private func makeConstraints(with style: Style) {
         label.snp.remakeConstraints { make in
             make.top.equalToSuperview().offset(style.padding.top)
             make.bottom.equalToSuperview().offset(style.padding.bottom)
@@ -238,9 +245,9 @@ extension ViewController: UICollectionViewDataSource {
             let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "textCell", for: indexPath) as! TextCell
             cell.configure(with: element.data, style: element.style)
             return cell
-        case let .title(data: data, style: style):
+        case let .title(element):
             let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "textCell", for: indexPath) as! TextCell
-            cell.configure(with: data, style: style)
+            cell.configure(with: element.data, style: element.style)
             return cell
         }
     }
