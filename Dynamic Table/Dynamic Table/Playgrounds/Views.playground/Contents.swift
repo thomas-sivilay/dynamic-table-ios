@@ -22,11 +22,6 @@ struct ImageData: Codable, Data {
     let url: String
 }
 
-struct TitleStyle: Codable, Style {
-    let size: Float
-    let padding: Padding
-}
-
 struct TextStyle: Codable, Style {
     let size: Float
     let padding: Padding
@@ -52,9 +47,10 @@ final class Element<Data, Style> {
 }
 
 enum UIElement: Decodable {
-    case title(Element<TextData, TitleStyle>)
-    case image(data: ImageData, style: ImageStyle)
+    case title(Element<TextData, TextStyle>)
     case text(Element<TextData, TextStyle>)
+    
+    case image(data: ImageData, style: ImageStyle)
 }
 
 extension UIElement {
@@ -86,7 +82,7 @@ extension UIElement {
             case "title":
                 if
                     let data = try? values.decode(TextData.self, forKey: .data),
-                    let style = try? values.decode(TitleStyle.self, forKey: .style)
+                    let style = try? values.decode(TextStyle.self, forKey: .style)
                 {
                     self = .title(Element(data: data, style: style))
                     return
@@ -155,9 +151,7 @@ final class TextCell: UICollectionViewCell {
     
     func configure(with data: TextData, style: Style) {
         label.text = data.text
-        if let style = style as? TitleStyle {
-            label.font = UIFont.systemFont(ofSize: CGFloat(style.size))
-        }
+        
         if let style = style as? TextStyle {
             label.font = UIFont.systemFont(ofSize: CGFloat(style.size))
         }
