@@ -22,9 +22,15 @@ struct ImageData: Codable, Data {
     let url: String
 }
 
+enum FontWeight: String, Codable {
+    case normal
+    case bold
+}
+
 struct TextStyle: Codable, Style {
     let size: Float
     let padding: Padding
+    var weight: FontWeight?
 }
 
 struct Padding: Codable {
@@ -122,7 +128,7 @@ let json = """
     {
         "type": "title",
         "data": {"text": "Hello!"},
-         "style": {"padding": {"top": 0, "bottom": 0, "left": 20, "right": 20}, "size": 24}
+         "style": {"padding": {"top": 0, "bottom": 0, "left": 20, "right": 20}, "size": 24, "weight": "bold"}
     },
     {
         "type": "text",
@@ -154,6 +160,15 @@ final class TextCell: UICollectionViewCell {
         
         if let style = style as? TextStyle {
             label.font = UIFont.systemFont(ofSize: CGFloat(style.size))
+            
+            if let weight = style.weight {
+                switch weight {
+                case .bold:
+                    label.font = UIFont.systemFont(ofSize: CGFloat(style.size), weight: UIFont.Weight.bold)
+                case .normal:
+                    label.font = UIFont.systemFont(ofSize: CGFloat(style.size), weight: UIFont.Weight.medium)
+                }
+            }
         }
         
         print(style)
