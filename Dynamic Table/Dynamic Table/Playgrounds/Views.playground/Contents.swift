@@ -180,6 +180,7 @@ final class TextCell: UICollectionViewCell {
     
     func configure(with data: TextData, style: Style) {
         label.text = data.text
+        label.numberOfLines = 0
         
         if let style = style as? TextStyle {
             label.textColor = hexStringToUIColor(hex: style.hexColor)
@@ -209,7 +210,7 @@ final class TextCell: UICollectionViewCell {
             make.top.equalToSuperview().offset(style.padding.top)
             make.bottom.equalToSuperview().offset(style.padding.bottom)
             make.left.equalToSuperview().offset(style.padding.left)
-            make.right.equalToSuperview().offset(style.padding.right)
+            make.right.equalToSuperview().inset(style.padding.right)
         }
     }
 }
