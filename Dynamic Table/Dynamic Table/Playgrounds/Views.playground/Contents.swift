@@ -31,6 +31,7 @@ struct TextStyle: Codable, Style {
     let size: Float
     let padding: Padding
     var weight: FontWeight?
+    let hexColor: String
 }
 
 struct Padding: Codable {
@@ -128,15 +129,37 @@ let json = """
     {
         "type": "title",
         "data": {"text": "Hello!"},
-         "style": {"padding": {"top": 0, "bottom": 0, "left": 20, "right": 20}, "size": 24, "weight": "bold"}
+         "style": {"padding": {"top": 0, "bottom": 0, "left": 20, "right": 20}, "size": 24, "weight": "bold", "hexColor": "#161616"}
     },
     {
         "type": "text",
-        "data": {"text": "Hello!"},
-         "style": {"padding": {"top": 0, "bottom": 0, "left": 10, "right": 10}, "size": 14}
+        "data": {"text": "Hello, this is a text written in multiline that should be long enough to test."},
+         "style": {"padding": {"top": 0, "bottom": 0, "left": 10, "right": 10}, "size": 14, "hexColor": "#646464"}
     },
 ]
 """.data(using: .utf8)!
+
+func hexStringToUIColor (hex:String) -> UIColor {
+    var cString:String = hex.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
+    
+    if (cString.hasPrefix("#")) {
+        cString.remove(at: cString.startIndex)
+    }
+    
+    if ((cString.characters.count) != 6) {
+        return UIColor.gray
+    }
+    
+    var rgbValue:UInt32 = 0
+    Scanner(string: cString).scanHexInt32(&rgbValue)
+    
+    return UIColor(
+        red: CGFloat((rgbValue & 0xFF0000) >> 16) / 255.0,
+        green: CGFloat((rgbValue & 0x00FF00) >> 8) / 255.0,
+        blue: CGFloat(rgbValue & 0x0000FF) / 255.0,
+        alpha: CGFloat(1.0)
+    )
+}
 
 final class TextCell: UICollectionViewCell {
     
@@ -159,6 +182,7 @@ final class TextCell: UICollectionViewCell {
         label.text = data.text
         
         if let style = style as? TextStyle {
+            label.textColor = hexStringToUIColor(hex: style.hexColor)
             label.font = UIFont.systemFont(ofSize: CGFloat(style.size))
             
             if let weight = style.weight {
