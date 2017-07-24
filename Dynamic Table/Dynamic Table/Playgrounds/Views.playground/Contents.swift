@@ -11,7 +11,7 @@ protocol Style {
 }
 
 extension Style {
-    var padding: Padding { return Padding(left: 0, right: 0, top: 0, bottom: 0) }
+    var padding: Padding { return Padding() }
 }
 
 struct TextData: Codable, Data {
@@ -39,9 +39,21 @@ struct Padding: Codable {
     let right: Int
     let top: Int
     let bottom: Int
+    
+    init() {
+        self.top = 0
+        self.bottom = 0
+        self.left = 0
+        self.right = 0
+    }
 }
 
 struct ImageStyle: Codable, Style { }
+
+struct Collection: Decodable {
+    let style: Padding
+    let data: [UIElement]
+}
 
 final class Element<Data, Style> {
     var data: Data
@@ -125,6 +137,9 @@ let style = """
 """.data(using: .utf8)!
 
 let json = """
+{
+    "type": "collection",
+    "data":
 [
     {
         "type": "title",
@@ -134,9 +149,11 @@ let json = """
     {
         "type": "text",
         "data": {"text": "Hello, this is a text written in multiline that should be long enough to test."},
-         "style": {"padding": {"top": 0, "bottom": 0, "left": 10, "right": 10}, "size": 14, "hexColor": "#646464"}
+         "style": {"padding": {"top": 0, "bottom": 0, "left": 20, "right": 20}, "size": 14, "hexColor": "#646464"}
     },
-]
+],
+    "style": {"top": 120, "bottom": 20, "left": 20, "right": 20}
+}
 """.data(using: .utf8)!
 
 func hexStringToUIColor (hex:String) -> UIColor {
@@ -196,8 +213,6 @@ final class TextCell: UICollectionViewCell {
             }
         }
         
-        print(style)
-        
         // DEBUG
         layer.borderColor = UIColor.cyan.cgColor
         layer.borderWidth = 1
@@ -220,7 +235,12 @@ final class ViewController: UIViewController {
     private var layout = UICollectionViewFlowLayout()
     private var collectionView: UICollectionView = UICollectionView(frame: .zero, collectionViewLayout: UICollectionViewFlowLayout())
     
-    private var elements = [UIElement]()
+    private var collection = Collection(style: Padding(), data: [UIElement]()) {
+        didSet {
+            makeConstraints(with: collection.style)
+            collectionView.reloadData()
+        }
+    }
     
     init() {
         super.init(nibName: nil, bundle: nil)
@@ -237,7 +257,7 @@ final class ViewController: UIViewController {
     }
     
     private func setUp(_ view: UIView) {
-        view.backgroundColor = .blue
+        view.backgroundColor = .white
         
         collectionView.register(TextCell.self, forCellWithReuseIdentifier: "textCell")
         
@@ -246,16 +266,22 @@ final class ViewController: UIViewController {
         collectionView.backgroundColor = .white
         
         view.addSubview(collectionView)
-        collectionView.snp.makeConstraints { make in
-            make.edges.equalToSuperview()
+        makeConstraints(with: collection.style)
+    }
+    
+    private func makeConstraints(with padding: Padding) {
+        collectionView.snp.remakeConstraints { make in
+            make.top.equalToSuperview().offset(padding.top)
+            make.bottom.equalToSuperview().offset(padding.bottom)
+            make.left.equalToSuperview().offset(padding.left)
+            make.right.equalToSuperview().inset(padding.right)
         }
     }
     
     private func loadData() {
         let decoder = JSONDecoder()
         do {
-            elements = try decoder.decode([UIElement].self, from: json)
-            collectionView.reloadData()
+            collection = try decoder.decode(Collection.self, from: json)
         } catch {
             print(error)
         }
@@ -265,11 +291,11 @@ final class ViewController: UIViewController {
 extension ViewController: UICollectionViewDataSource {
     
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return elements.count
+        return collection.data.count
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        let element = elements[indexPath.row]
+        let element = collection.data[indexPath.row]
         return configuredCell(for: element, at: indexPath)
     }
     
@@ -296,7 +322,7 @@ extension ViewController: UICollectionViewDelegateFlowLayout {
         
         // DEFINE THE HEIGHT FOR A GIVEN DATA
         
-        return CGSize(width: view.frame.width, height: 50)
+        return CGSize(width: collectionView.frame.width, height: 50)
     }
 }
 
